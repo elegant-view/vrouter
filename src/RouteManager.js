@@ -14,6 +14,7 @@
  *       	},
  *       	'user': {
  *       		Component: [...],
+ *       		isDefault: true,
  *       		children: {
  *       			'list': {
  *       				Component: [...]
@@ -74,8 +75,22 @@ export default class RouteManager {
 
         ++this[PARSE_CURSOR];
 
-        let curRoute = this[CUR_ROUTE][partialUrl];
+        let defaultRoute;
+        let curRoute;
+        for (let route in this[CUR_ROUTE]) {
+            if (partialUrl === route) {
+                curRoute = this[CUR_ROUTE][partialUrl];
+                break;
+            }
+            else if (this[CUR_ROUTE][route] && this[CUR_ROUTE][route].isDefault) {
+                defaultRoute = this[CUR_ROUTE][route];
+            }
+        }
+        if (!curRoute) {
+            curRoute = defaultRoute;
+        }
         this[CUR_ROUTE] = curRoute ? curRoute.children : null;
+
         return curRoute.Component;
     }
 
