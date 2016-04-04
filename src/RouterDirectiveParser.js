@@ -4,17 +4,21 @@
  */
 
 import DirectiveParser from 'vtpl/parsers/DirectiveParser';
+import parserState from 'vtpl/parsers/parserState';
+
+const FIND_COMPONENT = Symbol('findComponent');
+const RENDER_ROUTE = Symbol('renderRoute');
+const ON_ROUTE_CHANGE = Symbol('onRouteChange');
+const DESTROY_ROUTE_TREE = Symbol('destroyRouteTree');
 
 export default class RouterDirectiveParser extends DirectiveParser {
-    findComponent() {
+    [FIND_COMPONENT]() {
         let routeManager = this.tree.getTreeVar('routeManager');
         return routeManager.next();
     }
 
-    renderRoute(Component) {
-        if (this.routeTree) {
-            this.routeTree.destroy();
-        }
+    [RENDER_ROUTE](Component) {
+        this[DESTROY_ROUTE_TREE]();
 
         let nodesManager = this.tree.getTreeVar('nodesManager');
         let routeNode = nodesManager.createElement('ui-' + Component.name);
@@ -34,16 +38,20 @@ export default class RouterDirectiveParser extends DirectiveParser {
 
     linkScope() {
         let eventBus = this.tree.getTreeVar('eventBus');
-        eventBus.on('routechange', this.onRouteChange, this);
+        eventBus.on('routechange', this[ON_ROUTE_CHANGE], this);
     }
 
-    onRouteChange() {
-        let Component = this.findComponent();
+    [ON_ROUTE_CHANGE]() {
+        if (this.$state !== parserState.READY) {
+            return;
+        }
+
+        let Component = this[FIND_COMPONENT]();
         if (!Component) {
             return;
         }
 
-        this.renderRoute(Component);
+        this[RENDER_ROUTE](Component);
     }
 
     goDark() {
@@ -62,13 +70,20 @@ export default class RouterDirectiveParser extends DirectiveParser {
         this.routeTree.restoreFromDark();
     }
 
+    [DESTROY_ROUTE_TREE]() {
+        if (this.routeTree) {
+            this.removeTree(this.routeTree);
+            this.routeTree = null;
+        }
+    }
+
     destroy() {
+        this[DESTROY_ROUTE_TREE]();
+
         let eventBus = this.tree.getTreeVar('eventBus');
-        eventBus.off('routechange', this.onRouteChange, this);
+        eventBus.off('routechange', this[ON_ROUTE_CHANGE], this);
 
         super.destroy();
-        this.routeTree && this.routeTree.destroy();
-        this.routeTree = null;
     }
 
     static isProperNode(node) {

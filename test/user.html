@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title></title>
+    </head>
+    <body>
+        <!-- route -->
+        <script src="../node_modules/requirejs/require.js"></script>
+        <script>
+            require.config({
+                "baseUrl": "/src",
+                "paths": {},
+                "packages": [
+                    {
+                        "name": "test",
+                        "location": "../test",
+                        "main": "main"
+                    },
+                    {
+                        "name": "vcomponent",
+                        "location": "../node_modules/vcomponent/src",
+                        "main": "main"
+                    },
+                    {
+                        "name": "vtpl",
+                        "location": "../node_modules/vtpl/src",
+                        "main": "main"
+                    },
+                    {
+                        "name": "vbb",
+                        "location": "../node_modules/vbb/src"
+                    },
+                    {
+                        "name": "test",
+                        "location": "../test"
+                    },
+                    {
+                        "name": "underscore",
+                        "location": "../node_modules/underscore",
+                        "main": "underscore"
+                    }
+                ]
+            });
+            require(['test/user/main']);
+        </script>
+    </body>
+</html>

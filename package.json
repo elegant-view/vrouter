@@ -26,6 +26,7 @@
     "vbb": "github:elegant-view/vbb"
   },
   "dependencies": {
+    "vcomponent": "github:elegant-view/vcomponent",
     "vtpl": "github:elegant-view/vtpl"
   }
 }
