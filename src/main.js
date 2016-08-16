@@ -6,7 +6,7 @@
 import VComponent from 'vcomponent';
 import {locator} from './locator';
 import RouteManager from './RouteManager';
-import Event from 'vtpl/Event';
+import Event from 'event/Event';
 import RouterDirectiveParser from './RouterDirectiveParser';
 
 const ROUTE_MANAGER = Symbol('routeManager');
@@ -18,13 +18,13 @@ export default class VRouter extends VComponent {
     constructor(options) {
         super(options);
 
-        this.$vtpl.registerParser(RouterDirectiveParser);
+        this.vtpl.registerParser(RouterDirectiveParser);
 
         this[ROUTE_MANAGER] = new RouteManager();
         this[EVENT_BUS] = new Event();
 
-        this.$vtpl.$tree.setTreeVar('routeManager', this[ROUTE_MANAGER]);
-        this.$vtpl.$tree.setTreeVar('eventBus', this[EVENT_BUS]);
+        this.vtpl.tree.setTreeVar('routeManager', this[ROUTE_MANAGER]);
+        this.vtpl.tree.setTreeVar('eventBus', this[EVENT_BUS]);
 
         locator.on('change', this.onChange, this);
     }
@@ -36,8 +36,9 @@ export default class VRouter extends VComponent {
     }
 
     render() {
+        this[ROUTE_MANAGER].start(location.hash);
         super.render();
-        this.onChange();
+        this[ROUTE_MANAGER].end();
     }
 
     registerRoute(routeConfig) {

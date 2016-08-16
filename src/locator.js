@@ -3,8 +3,8 @@
  * @author yibuyisheng(yibuyisheng@163.com)
  */
 
-import Event from 'vtpl/Event';
-import utils from 'utils';
+import Event from 'event/Event';
+import * as utils from './utils';
 
 const history = [location.hash];
 let state = 'ready';

@@ -5,69 +5,122 @@
 
 import DirectiveParser from 'vtpl/parsers/DirectiveParser';
 import parserState from 'vtpl/parsers/parserState';
+import DoneChecker from 'vtpl/DoneChecker';
+import * as utils from './utils';
+import * as state from 'state/State';
 
 const FIND_COMPONENT = Symbol('findComponent');
 const RENDER_ROUTE = Symbol('renderRoute');
-const ON_ROUTE_CHANGE = Symbol('onRouteChange');
 const DESTROY_ROUTE_TREE = Symbol('destroyRouteTree');
 
 export default class RouterDirectiveParser extends DirectiveParser {
-    [FIND_COMPONENT]() {
-        let routeManager = this.tree.getTreeVar('routeManager');
-        return routeManager.next();
+    constructor(...args) {
+        super(...args);
+
+        /**
+         * 当前实例对应的路径段
+         *
+         * @type {string}
+         */
+        this.routePath = null;
+
+        /**
+         * 当前地址栏中的hash地址位于this.routePath之前的部分
+         *
+         * @type {Array.<string>}
+         */
+        this.routePathPrefix = null;
+
+        this.Component = null;
     }
 
-    [RENDER_ROUTE](Component) {
+    [FIND_COMPONENT]() {
+        const routeManager = this.tree.getTreeVar('routeManager');
+        return routeManager.next() || {};
+    }
+
+    [RENDER_ROUTE](Component, done) {
         this[DESTROY_ROUTE_TREE]();
 
-        let nodesManager = this.tree.getTreeVar('nodesManager');
-        let routeNode = nodesManager.createElement('ui-' + Component.name);
-        this.routeTree = this.createTree(this.tree, routeNode, routeNode);
+        if (Component) {
+            const nodesManager = this.tree.getTreeVar('nodesManager');
+            const routeNode = nodesManager.createElement('ev-' + utils.camel2line(Component.name));
+            this.routeTree = this.createTree(this.tree, routeNode, routeNode);
 
-        let componentManager = this.tree.getTreeVar('componentManager');
-        componentManager.register([Component]);
+            const componentManager = this.tree.getTreeVar('componentManager');
+            componentManager.register([Component]);
 
-        this.node.getParentNode().insertBefore(routeNode, this.node);
+            this.routeTree.compile();
+            this.routeTree.link();
+            this.routeTree.initRender(done);
 
-        this.routeTree.compile();
-        this.routeTree.link();
-        this.routeTree.initRender();
+            this.startNode.getParentNode().insertBefore(routeNode, this.startNode);
+        }
+        else {
+            done && done();
+        }
     }
 
     collectExprs() {}
 
     linkScope() {
-        let eventBus = this.tree.getTreeVar('eventBus');
-        eventBus.on('routechange', this[ON_ROUTE_CHANGE], this);
+        const eventBus = this.tree.getTreeVar('eventBus');
+        eventBus.on('routechange', this.onRouteChange, this);
     }
 
-    [ON_ROUTE_CHANGE]() {
-        if (this.$state !== parserState.READY) {
-            return;
-        }
+    initRender(done) {
+        const doneChecker = new DoneChecker(done);
 
-        let Component = this[FIND_COMPONENT]();
-        if (!Component) {
-            return;
-        }
+        const {Component, path, prefix} = this[FIND_COMPONENT]();
+        this.routePath = path;
+        this.routePathPrefix = prefix;
+        this.Component = Component;
 
-        this[RENDER_ROUTE](Component);
+        doneChecker.add(innerDone => this[RENDER_ROUTE](Component, innerDone));
+
+        doneChecker.complete();
     }
 
-    goDark() {
-        if (this.isGoDark) {
+    /**
+     * hash路径发生了变化的回调方法，仅在非destroied状态下执行
+     *
+     * @private
+     */
+    @state.ensureStates([state.not('destroied')])
+    onRouteChange() {
+        if (this.state !== parserState.READY) {
             return;
         }
 
-        this.routeTree.goDark();
+        const {Component, path, prefix} = this[FIND_COMPONENT]();
+        if (Component !== this.Component
+            || path !== this.routePath
+            || prefix.join('/') !== this.routePathPrefix.join('/')
+        ) {
+            this.routePath = path;
+            this.routePathPrefix = prefix;
+            this.Component = Component;
+
+            this[RENDER_ROUTE](Component);
+        }
     }
 
-    restoreFromDark() {
-        if (!this.isGoDark) {
-            return;
+    hide(done) {
+        if (this.routeTree) {
+            this.routeTree.goDark(done);
         }
+        else {
+            done && done();
+        }
+    }
 
-        this.routeTree.restoreFromDark();
+    show(done) {
+        if (this.routeTree) {
+            this.routeTree.restoreFromDark(done);
+        }
+        else {
+            done && done();
+        }
     }
 
     [DESTROY_ROUTE_TREE]() {
@@ -77,13 +130,13 @@ export default class RouterDirectiveParser extends DirectiveParser {
         }
     }
 
-    destroy() {
+    release() {
         this[DESTROY_ROUTE_TREE]();
 
-        let eventBus = this.tree.getTreeVar('eventBus');
-        eventBus.off('routechange', this[ON_ROUTE_CHANGE], this);
+        const eventBus = this.tree.getTreeVar('eventBus');
+        eventBus.off('routechange', this.onRouteChange, this);
 
-        super.destroy();
+        super.release();
     }
 
     static isProperNode(node) {

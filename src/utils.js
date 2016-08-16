@@ -1,2 +1,6 @@
-import utils from 'vcomponent/utils';
-export default utils;
+/**
+ * @file utils
+ * @author yibuyisheng@163.com
+ */
+
+export * from 'vcomponent/utils';

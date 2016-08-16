@@ -37,6 +37,11 @@ const CUR_ROUTE = Symbol('curRoute');
 const STATE_READY = Symbol('stateReady');
 const STATE_ITERATING = Symbol('stateIterating');
 
+/**
+ * 贯穿整个DOM渲染区域的路径管理器
+ *
+ * @class RouteManager
+ */
 export default class RouteManager {
     registerRoute(routeConfig) {
         if (this[STATE]) {
@@ -53,6 +58,10 @@ export default class RouteManager {
         }
 
         this[FULL_URL] = url.replace(/^(#\/|\/|#)|\/$/g, '').split('/');
+        if (this[FULL_URL][this[FULL_URL].length - 1] !== '') {
+            this[FULL_URL].push('');
+        }
+
         this[PARSE_CURSOR] = 0;
         this[CUR_ROUTE] = this[ROUTE_CONFIG];
 
@@ -69,7 +78,7 @@ export default class RouteManager {
         }
 
         let partialUrl = this[FULL_URL][this[PARSE_CURSOR]];
-        if (!partialUrl) {
+        if (partialUrl === undefined) {
             return null;
         }
 
@@ -89,9 +98,11 @@ export default class RouteManager {
         if (!curRoute) {
             curRoute = defaultRoute;
         }
+
         this[CUR_ROUTE] = curRoute ? curRoute.children : null;
 
-        return curRoute.Component;
+        const prefix = this[FULL_URL].slice(0, this[PARSE_CURSOR] - 1);
+        return curRoute ? {Component: curRoute.Component, path: partialUrl, prefix} : null;
     }
 
     end() {
