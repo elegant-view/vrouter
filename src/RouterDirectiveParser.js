@@ -14,6 +14,9 @@ const RENDER_ROUTE = Symbol('renderRoute');
 const DESTROY_ROUTE_TREE = Symbol('destroyRouteTree');
 
 export default class RouterDirectiveParser extends DirectiveParser {
+    
+    static priority = 3;
+
     constructor(...args) {
         super(...args);
 
