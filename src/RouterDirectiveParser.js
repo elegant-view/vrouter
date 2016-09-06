@@ -8,6 +8,7 @@ import parserState from 'vtpl/parsers/parserState';
 import DoneChecker from 'vtpl/DoneChecker';
 import * as utils from './utils';
 import * as state from 'state/State';
+import {getType} from 'vcomponent/Component';
 
 const FIND_COMPONENT = Symbol('findComponent');
 const RENDER_ROUTE = Symbol('renderRoute');
@@ -47,7 +48,7 @@ export default class RouterDirectiveParser extends DirectiveParser {
 
         if (Component) {
             const nodesManager = this.tree.getTreeVar('nodesManager');
-            const routeNode = nodesManager.createElement('ev-' + utils.camel2line(Component.name));
+            const routeNode = nodesManager.createElement('ev-' + utils.camel2line(getType(Component)));
             this.routeTree = this.createTree(this.tree, routeNode, routeNode);
 
             const componentManager = this.tree.getTreeVar('componentManager');
