@@ -40,7 +40,13 @@ export default class RouterDirectiveParser extends DirectiveParser {
 
     [FIND_COMPONENT]() {
         const routeManager = this.tree.getTreeVar('routeManager');
-        return routeManager.next() || {};
+
+        let result;
+        do {
+            result = routeManager.next();
+        } while (result && !result.Component);
+
+        return result || {};
     }
 
     [RENDER_ROUTE](Component, done) {
