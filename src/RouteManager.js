@@ -116,6 +116,10 @@ export default class RouteManager {
         this[CUR_ROUTE] = null;
     }
 
+    beforeEnter() {}
+
+    afterEnter() {}
+
     destroy() {
 
     }
