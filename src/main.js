@@ -27,6 +27,13 @@ export default class VRouter extends VComponent {
         this.vtpl.tree.setTreeVar('eventBus', this[EVENT_BUS]);
 
         locator.on('change', this.onChange, this);
+
+        if (options.beforeEnter instanceof Function) {
+            this[ROUTE_MANAGER].beforeEnter = options.beforeEnter;
+        }
+        if (options.afterEnter instanceof Function) {
+            this[ROUTE_MANAGER].afterEnter = options.afterEnter;
+        }
     }
 
     onChange(params) {
