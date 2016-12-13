@@ -9,13 +9,17 @@ import DoneChecker from 'vtpl/DoneChecker';
 import * as utils from './utils';
 import * as state from 'state/State';
 import {getType} from 'vcomponent/Component';
+import EventTarget from './EventTarget';
 
 const FIND_COMPONENT = Symbol('findComponent');
 const RENDER_ROUTE = Symbol('renderRoute');
 const DESTROY_ROUTE_TREE = Symbol('destroyRouteTree');
 
 export default class RouterDirectiveParser extends DirectiveParser {
-    
+
+    /**
+     * @override
+     */
     static priority = 3;
 
     constructor(...args) {
@@ -53,6 +57,13 @@ export default class RouterDirectiveParser extends DirectiveParser {
         this[DESTROY_ROUTE_TREE]();
 
         if (Component) {
+            const routeManager = this.tree.getTreeVar('routeManager');
+            const eventTarget = new EventTarget();
+            routeManager.beforeEnter(eventTarget);
+            if (eventTarget.isPreventDefault()) {
+                return done && done();
+            }
+
             const nodesManager = this.tree.getTreeVar('nodesManager');
             const routeNode = nodesManager.createElement('ev-' + utils.camel2line(getType(Component)));
             this.routeTree = this.createTree(this.tree, routeNode, routeNode);
@@ -62,7 +73,10 @@ export default class RouterDirectiveParser extends DirectiveParser {
 
             this.routeTree.compile();
             this.routeTree.link();
-            this.routeTree.initRender(done);
+            this.routeTree.initRender(() => {
+                routeManager.afterEnter();
+                done && done();
+            });
 
             this.startNode.getParentNode().insertBefore(routeNode, this.startNode);
         }
@@ -110,7 +124,6 @@ export default class RouterDirectiveParser extends DirectiveParser {
             this.routePath = path;
             this.routePathPrefix = prefix;
             this.Component = Component;
-
             this[RENDER_ROUTE](Component);
         }
     }
