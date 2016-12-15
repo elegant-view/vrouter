@@ -3,6 +3,7 @@
  *       {
  *       	'project': {
  *       		Component: [...],
+ *              matcher: function (partialUrl, routeKey, routeObj) {}, // 判断路由是否匹配的
  *       		children: {
  *       			'list': {
  *       				Component: [...]
@@ -57,7 +58,7 @@ export default class RouteManager {
             throw new Error('illegal state');
         }
 
-        this[FULL_URL] = url.replace(/^(#\/|\/|#)|\/$/g, '').split('/');
+        this[FULL_URL] = url.replace(/^(#\/|\/|#)|\/$/g, '').split('~')[0].split('/');
         if (this[FULL_URL][this[FULL_URL].length - 1] !== '') {
             this[FULL_URL].push('');
         }
@@ -87,7 +88,7 @@ export default class RouteManager {
         let defaultRoute;
         let curRoute;
         for (let route in this[CUR_ROUTE]) {
-            if (partialUrl === route) {
+            if (this.isMatch(partialUrl, route, this[CUR_ROUTE][route])) {
                 curRoute = this[CUR_ROUTE][partialUrl];
                 break;
             }
@@ -103,6 +104,13 @@ export default class RouteManager {
 
         const prefix = this[FULL_URL].slice(0, this[PARSE_CURSOR] - 1);
         return curRoute ? {Component: curRoute.Component, path: partialUrl, prefix} : null;
+    }
+
+    isMatch(partialUrl, routeKey, routeObj) {
+        if (routeObj.matcher instanceof Function) {
+            return routeObj.matcher(partialUrl, this[FULL_URL], routeKey, routeObj);
+        }
+        return partialUrl === routeKey;
     }
 
     end() {
