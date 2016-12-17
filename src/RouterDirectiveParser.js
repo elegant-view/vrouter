@@ -4,7 +4,7 @@
  */
 
 import DirectiveParser from 'vtpl/parsers/DirectiveParser';
-import parserState from 'vtpl/parsers/parserState';
+import parserStage from 'vtpl/parsers/parserStage';
 import DoneChecker from 'vtpl/DoneChecker';
 import * as utils from './utils';
 import * as state from 'state/State';
@@ -110,9 +110,8 @@ export default class RouterDirectiveParser extends DirectiveParser {
      *
      * @private
      */
-    @state.ensureStates([state.not('destroied')])
     onRouteChange() {
-        if (this.state !== parserState.READY) {
+        if (!this.isInStage(parserStage.READY)) {
             return;
         }
 
