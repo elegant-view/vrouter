@@ -89,7 +89,7 @@ export default class RouteManager {
         let curRoute;
         for (let route in this[CUR_ROUTE]) {
             if (this.isMatch(partialUrl, route, this[CUR_ROUTE][route])) {
-                curRoute = this[CUR_ROUTE][partialUrl];
+                curRoute = this[CUR_ROUTE][route];
                 break;
             }
             else if (this[CUR_ROUTE][route] && this[CUR_ROUTE][route].isDefault) {
