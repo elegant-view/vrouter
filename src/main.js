@@ -38,6 +38,7 @@ export default class VRouter extends VComponent {
 
     onChange(params) {
         this[ROUTE_MANAGER].start(location.hash);
+        this.vtpl.tree.rootScope.set('__query__', this[ROUTE_MANAGER].getQuery(), true);
         this[EVENT_BUS].trigger('routechange');
         this[ROUTE_MANAGER].end();
     }
