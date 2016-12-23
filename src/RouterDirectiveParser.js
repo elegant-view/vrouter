@@ -65,7 +65,8 @@ export default class RouterDirectiveParser extends DirectiveParser {
             }
 
             const nodesManager = this.tree.getTreeVar('nodesManager');
-            const routeNode = nodesManager.createElement('ev-' + utils.camel2line(getType(Component)));
+            const routeNode = nodesManager.createElement(`ev-${utils.camel2line(getType(Component))}`);
+            routeNode.setAttribute('query', '{__query__}');
             this.routeTree = this.createTree(this.tree, routeNode, routeNode);
 
             const componentManager = this.tree.getTreeVar('componentManager');
@@ -95,10 +96,12 @@ export default class RouterDirectiveParser extends DirectiveParser {
     initRender(done) {
         const doneChecker = new DoneChecker(done);
 
-        const {Component, path, prefix} = this[FIND_COMPONENT]();
+        const {Component, path, prefix, query, queryString} = this[FIND_COMPONENT]();
         this.routePath = path;
         this.routePathPrefix = prefix;
         this.Component = Component;
+        this.query = query;
+        this.queryString = queryString;
 
         doneChecker.add(innerDone => this[RENDER_ROUTE](Component, innerDone));
 
@@ -115,14 +118,17 @@ export default class RouterDirectiveParser extends DirectiveParser {
             return;
         }
 
-        const {Component, path, prefix} = this[FIND_COMPONENT]();
+        const {Component, path, prefix, queryString, query, fullUrl} = this[FIND_COMPONENT]();
         if (Component !== this.Component
             || path !== this.routePath
             || prefix.join('/') !== this.routePathPrefix.join('/')
+            || (fullUrl.join('/') === `${prefix.join('/')}/${path}/` && queryString !== this.queryString)
         ) {
             this.routePath = path;
             this.routePathPrefix = prefix;
             this.Component = Component;
+            this.query = query;
+            this.queryString = queryString;
             this[RENDER_ROUTE](Component);
         }
     }
