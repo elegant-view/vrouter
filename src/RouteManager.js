@@ -29,11 +29,15 @@
  * @author yibuyisheng(yibuyisheng@163.com)
  */
 
+import queryString from 'query-string';
+
 const ROUTE_CONFIG = Symbol('routeConfig');
 const FULL_URL = Symbol('fullUrl');
 const PARSE_CURSOR = Symbol('parseCursor');
 const STATE = Symbol('state');
 const CUR_ROUTE = Symbol('curRoute');
+const QUERY = Symbol('query');
+const QUERY_STRING = Symbol('queryString');
 
 const STATE_READY = Symbol('stateReady');
 const STATE_ITERATING = Symbol('stateIterating');
@@ -53,12 +57,19 @@ export default class RouteManager {
         this[STATE] = STATE_READY;
     }
 
+    getQuery() {
+        return this[QUERY];
+    }
+
     start(url) {
         if (this[STATE] !== STATE_READY) {
             throw new Error('illegal state');
         }
 
-        this[FULL_URL] = url.replace(/^(#\/|\/|#)|\/$/g, '').split('~')[0].split('/');
+        let [fullUrl, query] = url.replace(/^(#\/|\/|#)|\/$/g, '').split('~');
+        this[FULL_URL] = fullUrl.split('/');
+        this[QUERY_STRING] = query;
+        this[QUERY] = queryString.parse(query);
         if (this[FULL_URL][this[FULL_URL].length - 1] !== '') {
             this[FULL_URL].push('');
         }
@@ -103,7 +114,14 @@ export default class RouteManager {
         this[CUR_ROUTE] = curRoute ? curRoute.children : null;
 
         const prefix = this[FULL_URL].slice(0, this[PARSE_CURSOR] - 1);
-        return curRoute ? {Component: curRoute.Component, path: partialUrl, prefix} : null;
+        return curRoute ? {
+            Component: curRoute.Component,
+            path: partialUrl,
+            prefix,
+            query: this[QUERY],
+            queryString: this[QUERY_STRING],
+            fullUrl: this[FULL_URL]
+        } : null;
     }
 
     isMatch(partialUrl, routeKey, routeObj) {
